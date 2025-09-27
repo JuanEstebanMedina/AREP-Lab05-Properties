@@ -12,6 +12,7 @@ import co.edu.escuelaing.propertiesapi.repository.PropertyRepository;
 import co.edu.escuelaing.propertiesapi.service.PropertyService;
 
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Property get(Long id) {
-        return repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Property not found: " + id));
+        return repo.findById(id).orElseThrow(() -> new NoSuchElementException("Property not found"));
     }
 
     @Override
@@ -53,7 +54,7 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     public void delete(Long id) {
         if (!repo.existsById(id)) {
-            throw new IllegalArgumentException("Property not found: " + id);
+            throw new NoSuchElementException("Property not found");
         }
         repo.deleteById(id);
     }
