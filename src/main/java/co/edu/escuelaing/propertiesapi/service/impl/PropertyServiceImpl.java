@@ -79,7 +79,9 @@ public class PropertyServiceImpl implements PropertyService {
             BigDecimal min = hasMin ? minPrice : BigDecimal.valueOf(0);
             BigDecimal max = hasMax ? maxPrice : new BigDecimal("9999999999");
             if (min.compareTo(max) > 0) {
-                BigDecimal tmp = min; min = max; max = tmp;
+                BigDecimal tmp = min;
+                min = max;
+                max = tmp;
             }
             Specification<Property> s = priceBetween(min, max);
             spec = (spec == null) ? s : spec.and(s);
