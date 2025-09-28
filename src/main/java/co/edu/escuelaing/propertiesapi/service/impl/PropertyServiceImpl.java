@@ -60,43 +60,88 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public Page<Property> search(String address, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        boolean hasAddress = address != null && !address.isBlank();
-        boolean hasMin = minPrice != null;
-        boolean hasMax = maxPrice != null;
+    public Page<Property> search(String address, String q,
+            BigDecimal minPrice, BigDecimal maxPrice,
+            Double minSize, Double maxSize,
+            Pageable pageable) {
 
-        if (!hasAddress && !hasMin && !hasMax) {
-            return list(pageable);
+        boolean hasAddress = address != null && !address.isBlank();
+        boolean hasQ = q != null && !q.isBlank();
+        boolean hasMinP = minPrice != null;
+        boolean hasMaxP = maxPrice != null;
+        boolean hasMinS = minSize != null;
+        boolean hasMaxS = maxSize != null;
+
+        if (!hasAddress && !hasQ && !hasMinP && !hasMaxP && !hasMinS && !hasMaxS) {
+            return repo.findAll(pageable);
         }
 
         Specification<Property> spec = null;
 
         if (hasAddress) {
-            Specification<Property> s = addressContains(address);
+            Specification<Property> s = PropertySpecs.addressContains(address);
             spec = (spec == null) ? s : spec.and(s);
         }
 
-        if (hasMin || hasMax) {
-            BigDecimal min = hasMin ? minPrice : BigDecimal.valueOf(0);
-            BigDecimal max = hasMax ? maxPrice : new BigDecimal("9999999999");
+        if (hasQ) {
+            Specification<Property> s = PropertySpecs.freeText(q);
+            spec = (spec == null) ? s : spec.and(s);
+        }
+
+        if (hasMinP || hasMaxP) {
+            BigDecimal min = hasMinP ? minPrice : BigDecimal.ZERO;
+            BigDecimal max = hasMaxP ? maxPrice : new BigDecimal("9999999999");
             if (min.compareTo(max) > 0) {
-                BigDecimal tmp = min;
+                var tmp = min;
                 min = max;
                 max = tmp;
             }
-            Specification<Property> s = priceBetween(min, max);
+            Specification<Property> s = PropertySpecs.priceBetween(min, max);
+            spec = (spec == null) ? s : spec.and(s);
+        }
+
+        if (hasMinS || hasMaxS) {
+            double min = hasMinS ? minSize : 0d;
+            double max = hasMaxS ? maxSize : Double.MAX_VALUE;
+            if (min > max) {
+                double t = min;
+                min = max;
+                max = t;
+            }
+            Specification<Property> s = PropertySpecs.sizeBetween(min, max);
             spec = (spec == null) ? s : spec.and(s);
         }
 
         return repo.findAll(spec, pageable);
     }
 
-    // Specification helpers
-    private Specification<Property> addressContains(String address) {
-        return (root, query, cb) -> cb.like(cb.lower(root.get("address")), "%" + address.toLowerCase() + "%");
+    private static final class PropertySpecs {
+    private PropertySpecs() {}
+
+    public static Specification<Property> addressContains(String text) {
+        final String like = "%" + text.toLowerCase() + "%";
+        return (root, q, cb) -> cb.like(cb.lower(root.get("address")), like);
     }
 
-    private Specification<Property> priceBetween(BigDecimal min, BigDecimal max) {
-        return (root, query, cb) -> cb.between(root.get("price"), min, max);
+    public static Specification<Property> descriptionContains(String text) {
+        final String like = "%" + text.toLowerCase() + "%";
+        return (root, q, cb) -> cb.like(cb.lower(root.get("description")), like);
     }
+
+    public static Specification<Property> freeText(String text) {
+        final String like = "%" + text.toLowerCase() + "%";
+        return (root, q, cb) -> cb.or(
+                cb.like(cb.lower(root.get("address")), like),
+                cb.like(cb.lower(root.get("description")), like)
+        );
+    }
+
+    public static Specification<Property> priceBetween(BigDecimal min, BigDecimal max) {
+        return (root, q, cb) -> cb.between(root.get("price"), min, max);
+    }
+
+    public static Specification<Property> sizeBetween(Double min, Double max) {
+        return (root, q, cb) -> cb.between(root.get("size"), min, max);
+    }
+}
 }

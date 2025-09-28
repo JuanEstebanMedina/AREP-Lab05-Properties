@@ -25,11 +25,16 @@ public class PropertyController {
 
     @GetMapping
     public ResponseEntity<Page<Property>> list(
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double minSize,
+            @RequestParam(required = false) Double maxSize,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(service.search(address, minPrice, maxPrice, pageable));
+
+        return ResponseEntity.ok(
+                service.search(address, q, minPrice, maxPrice, minSize, maxSize, pageable));
     }
 
     @GetMapping("/{id}")

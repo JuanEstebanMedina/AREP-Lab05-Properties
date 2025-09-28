@@ -10,10 +10,18 @@ import java.math.BigDecimal;
 
 public interface PropertyService {
     Property create(PropertyDto p);
+
     Page<Property> list(Pageable pageable);
+
     Property get(Long id);
+
     Property update(Long id, PropertyDto p);
+
     void delete(Long id);
 
-    Page<Property> search(String address, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    Page<Property> search(String address,
+            String q,
+            BigDecimal minPrice, BigDecimal maxPrice,
+            Double minSize, Double maxSize,
+            Pageable pageable);
 }
